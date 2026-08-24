@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Churn Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="model_data.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col items-center py-10 px-4">
+    <div class="max-w-2xl w-full bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 p-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+                📊 Customer Churn Prediction App
+            </h1>
+            <p class="text-slate-400 text-sm">
+                Predict if a customer will stay or leave based on their profile.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Numerical Inputs -->
+            <div class="space-y-6">
+                <h3 class="text-md font-semibold text-cyan-400 border-b border-slate-800 pb-2">Usage & Charges</h3>
+                
+                <!-- Age -->
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <label for="age" class="text-slate-300">Age</label>
+                        <span id="ageVal" class="text-cyan-400 font-medium">45</span>
+                    </div>
+                    <input type="range" id="age" min="18" max="100" value="45" 
+                           class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                           oninput="document.getElementById('ageVal').innerText = this.value">
+                </div>
+
+                <!-- Tenure -->
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <label for="tenure" class="text-slate-300">Tenure (Months)</label>
+                        <span id="tenureVal" class="text-cyan-400 font-medium">12</span>
+                    </div>
+                    <input type="range" id="tenure" min="0" max="125" value="12" 
+                           class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                           oninput="document.getElementById('tenureVal').innerText = this.value">
+                </div>
+
+                <!-- Monthly Charges -->
+                <div>
+                    <label for="monthly" class="block text-sm text-slate-300 mb-2">Monthly Charges ($)</label>
+                    <input type="number" id="monthly" min="30.0" max="120.0" value="75.0" step="0.1"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+                </div>
+
+                <!-- Total Charges -->
+                <div>
+                    <label for="total" class="block text-sm text-slate-300 mb-2">Total Charges ($)</label>
+                    <input type="number" id="total" min="0.0" max="15000.0" value="1000.0" step="0.1"
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+                </div>
+            </div>
+
+            <!-- Categorical Inputs -->
+            <div class="space-y-6">
+                <h3 class="text-md font-semibold text-cyan-400 border-b border-slate-800 pb-2">Customer Profile</h3>
+
+                <!-- Gender -->
+                <div>
+                    <label for="gender" class="block text-sm text-slate-300 mb-2">Gender</label>
+                    <select id="gender" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+                        <option value="Female">Female</option>
+                        <option value="Male" selected>Male</option>
+                    </select>
+                </div>
+
+                <!-- Contract Type -->
+                <div>
+                    <label for="contract" class="block text-sm text-slate-300 mb-2">Contract Type</label>
+                    <select id="contract" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+                        <option value="Month-to-Month" selected>Month-to-Month</option>
+                        <option value="One-Year">One-Year</option>
+                        <option value="Two-Year">Two-Year</option>
+                    </select>
+                </div>
+
+                <!-- Internet Service -->
+                <div>
+                    <label for="internet" class="block text-sm text-slate-300 mb-2">Internet Service</label>
+                    <select id="internet" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+                        <option value="DSL">DSL</option>
+                        <option value="Fiber Optic" selected>Fiber Optic</option>
+                        <option value="None">None</option>
+                    </select>
+                </div>
+
+                <!-- Tech Support -->
+                <div>
+                    <label for="support" class="block text-sm text-slate-300 mb-2">Tech Support</label>
+                    <select id="support" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+                        <option value="No" selected>No</option>
+                        <option value="Yes">Yes</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predict Button -->
+        <button onclick="runPrediction()" 
+                class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-900 font-bold py-3 px-6 rounded-xl transition duration-300 shadow-lg shadow-cyan-500/20 mb-8">
+            Predict Churn Risk
+        </button>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden border-t border-slate-800 pt-6 space-y-6">
+            <h3 class="text-lg font-semibold text-slate-200">Prediction Results</h3>
+            
+            <div id="riskCard" class="p-6 rounded-xl border flex flex-col items-center justify-center text-center">
+                <span id="riskIcon" class="text-4xl mb-2"></span>
+                <h4 id="riskLabel" class="text-xl font-bold mb-1"></h4>
+                <p id="riskProbability" class="text-sm text-slate-400"></p>
+            </div>
+
+            <!-- Profile Summary Table -->
+            <div>
+                <h4 class="text-sm font-semibold text-slate-300 mb-3">Customer Profile Used for Analysis:</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-400 border border-slate-800 rounded-lg overflow-hidden">
+                        <thead class="text-xs uppercase bg-slate-950 text-slate-300">
+                            <tr>
+                                <th class="px-4 py-2">Parameter</th>
+                                <th class="px-4 py-2">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody" class="divide-y divide-slate-800">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-xs text-slate-500">
+        Designed by Sthuthi • Hosted on GitHub Pages
+    </div>
+
+    <script>
+        function predictTree(tree, x) {
+            let node = 0;
+            while (tree.left[node] !== -1) {
+                let featureIdx = tree.feature[node];
+                let val = x[featureIdx];
+                if (val <= tree.threshold[node]) {
+                    node = tree.left[node];
+                } else {
+                    node = tree.right[node];
+                }
+            }
+            let leafVal = tree.value[node];
+            return leafVal[1]; // prob of class 1 (churn)
+        }
+
+        function predictForest(forest, x) {
+            let sumProb1 = 0;
+            for (let tree of forest) {
+                sumProb1 += predictTree(tree, x);
+            }
+            return sumProb1 / forest.length;
+        }
+
+        function runPrediction() {
+            // Get inputs
+            const age = parseInt(document.getElementById('age').value);
+            const tenure = parseInt(document.getElementById('tenure').value);
+            const monthly = parseFloat(document.getElementById('monthly').value);
+            const total = parseFloat(document.getElementById('total').value);
+            
+            const gender = document.getElementById('gender').value;
+            const contract = document.getElementById('contract').value;
+            const internet = document.getElementById('internet').value;
+            const support = document.getElementById('support').value;
+
+            // Encode categorical inputs
+            const genderEncoded = ENCODERS.Gender.indexOf(gender);
+            const contractEncoded = ENCODERS.ContractType.indexOf(contract);
+            const internetEncoded = ENCODERS.InternetService.indexOf(internet);
+            const supportEncoded = ENCODERS.TechSupport.indexOf(support);
+
+            // Construct feature array matching:
+            // ['Age', 'Gender', 'Tenure', 'MonthlyCharges', 'ContractType', 'InternetService', 'TotalCharges', 'TechSupport']
+            const x = [
+                age,
+                genderEncoded,
+                tenure,
+                monthly,
+                contractEncoded,
+                internetEncoded,
+                total,
+                supportEncoded
+            ];
+
+            // Run model
+            const churnProb = predictForest(FOREST, x);
+            const isChurn = churnProb >= 0.5;
+
+            // Show results
+            const resultsDiv = document.getElementById('results');
+            const riskCard = document.getElementById('riskCard');
+            const riskIcon = document.getElementById('riskIcon');
+            const riskLabel = document.getElementById('riskLabel');
+            const riskProbability = document.getElementById('riskProbability');
+
+            resultsDiv.classList.remove('hidden');
+
+            if (isChurn) {
+                riskCard.className = "p-6 rounded-xl border border-red-500/30 bg-red-950/20 text-center";
+                riskIcon.innerText = "⚠️";
+                riskLabel.innerText = "High Churn Risk";
+                riskLabel.className = "text-xl font-bold text-red-400 mb-1";
+                riskProbability.innerText = `There is a ${(churnProb * 100).toFixed(1)}% chance of this customer churning.`;
+            } else {
+                riskCard.className = "p-6 rounded-xl border border-green-500/30 bg-green-950/20 text-center";
+                riskIcon.innerText = "✅";
+                riskLabel.innerText = "Low Churn Risk";
+                riskLabel.className = "text-xl font-bold text-green-400 mb-1";
+                riskProbability.innerText = `There is a ${((1 - churnProb) * 100).toFixed(1)}% chance of this customer staying.`;
+            }
+
+            // Populate table
+            const summaryTableBody = document.getElementById('summaryTableBody');
+            const fields = [
+                { name: 'Age', val: age },
+                { name: 'Gender', val: gender },
+                { name: 'Tenure (Months)', val: tenure },
+                { name: 'Monthly Charges', val: `$${monthly.toFixed(2)}` },
+                { name: 'Contract Type', val: contract },
+                { name: 'Internet Service', val: internet },
+                { name: 'Total Charges', val: `$${total.toFixed(2)}` },
+                { name: 'Tech Support', val: support }
+            ];
+
+            summaryTableBody.innerHTML = fields.map(f => `
+                <tr class="border-b border-slate-800 bg-slate-900/50 hover:bg-slate-800/30 transition">
+                    <td class="px-4 py-2 font-medium text-slate-300">${f.name}</td>
+                    <td class="px-4 py-2 text-cyan-400 font-semibold">${f.val}</td>
+                </tr>
+            `).join('');
+
+            // Scroll to results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
